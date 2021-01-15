@@ -1,39 +1,18 @@
 <template>
     <v-card color="white" flat class="pb-2">
-        <app-table-title :title="getTitle" :has-pagination="showPagination" :page-type="pageType" page-link="">
+        <app-table-title :title="getTitle" :has-pagination="showPagination" :has-filter="isETH" :page-type="pageType" page-link="">
             <!-- Notice new update-->
             <template v-if="!initialLoad" #update>
                 <app-new-update :text="updateText" :update-count="newTransfers" @reload="setPage(0, true)" />
             </template>
-            <template v-if="!isETH && showPagination && !initialLoad" #pagination>
-                <app-paginate-has-more
-                    v-if="showPagination && !initialLoad"
-                    :class="$vuetify.breakpoint.smAndDown ? 'pt-3' : ''"
-                    :has-more="hasMore"
-                    :current-page="index"
-                    :loading="loading"
-                    @newPage="setPage"
-                />
+            <template v-if="showPagination && !initialLoad" #pagination>
+                <app-paginate-has-more v-if="showPagination && !initialLoad" :has-more="hasMore" :current-page="index" :loading="loading" @newPage="setPage" />
+            </template>
+            <template v-if="isETH && hasFilter" #filter>
+                <app-filter :is-sort="false" :items="options" :selected="activeFilter" @onSelectChange="onFilterChange" />
             </template>
         </app-table-title>
-        <v-layout v-if="isETH" :column="$vuetify.breakpoint.xs" :align-center="true" d-flex justify-space-between wrap pa-3>
-            <app-filter
-                v-if="((!initialLoad && getTransfers.transfers.length > 0) || filter)"
-                :options="options"
-                :show-desktop="true"
-                :is-sort="false"
-                @onSelectChange="onFilterChange"
-            />
-            <app-paginate-has-more
-                v-if="showPagination && !initialLoad"
-                :class="$vuetify.breakpoint.smAndDown ? 'pt-3' : ''"
-                :has-more="hasMore"
-                :current-page="index"
-                :loading="loading"
-                @newPage="setPage"
-            />
-        </v-layout>
-        <table-txs :max-items="maxItems" :index="index" :is-loading="loading" :table-message="message" :txs-data="transfers" :is-scroll-view="false">
+        <table-txs :max-items="maxItems" :index="index" :is-loading="loading" :table-message="message" :txs-data="transfers" :is-scroll-view="false" mt-5>
             <template #header>
                 <table-address-txs-header v-if="isETH" :address="address" />
                 <table-address-tokens-header v-else :is-erc20="isERC20" :is-transfers="true" />
@@ -74,13 +53,14 @@ import TableAddressTxsHeader from '@app/modules/address/components/TableAddressT
 import TableAddressTxsRow from '@app/modules/address/components/TableAddressTxsRow.vue'
 import TableAddressTokensHeader from '@app/modules/address/components/TableAddressTokensHeader.vue'
 import TableAddressTransfersRow from '@app/modules/address/components/TableAddressTransfersRow.vue'
+import { FilterSortItem } from '@app/core/components/props'
 import { Component, Prop, Watch, Vue, Mixins } from 'vue-property-decorator'
 import BN from 'bignumber.js'
 import { getAddressEthTransfers, getAddressERC20Transfers, getAddressERC721Transfers, getTransactionStateDiff } from './transfers.graphql'
 import { getAddressEthTransfers_getEthTransfersV2 as EthTransfersType } from './apolloTypes/getAddressEthTransfers'
 import { getAddressERC20Transfers_getERC20Transfers as ERC20TransfersType } from './apolloTypes/getAddressERC20Transfers'
 import { getAddressERC721Transfers_getERC721Transfers as ERC721TransfersType } from './apolloTypes/getAddressERC721Transfers'
-import { AddressEventType } from '@app/apollo/global/globalTypes'
+import { AddressEventType, TransferFilter } from '@app/apollo/global/globalTypes'
 import { EthTransfer } from '@app/modules/address/models/EthTransfer'
 import { ErrorMessage } from '../../models/ErrorMessagesForAddress'
 import { getLatestPrices_getLatestPrices as TokenMarketData } from '@app/core/components/mixins/CoinData/apolloTypes/getLatestPrices'
@@ -88,7 +68,7 @@ import { CoinData } from '@app/core/components/mixins/CoinData/CoinData.mixin'
 import { excpInvariantViolation } from '@app/apollo/exceptions/errorExceptions'
 
 const TYPES = ['in', 'out', 'self']
-
+const FILTER_OPTIONS = [null, TransferFilter.TO, TransferFilter.FROM]
 @Component({
     components: {
         AppNewUpdate,
@@ -113,7 +93,7 @@ const TYPES = ['in', 'out', 'self']
             variables() {
                 return {
                     hash: this.address,
-                    filter: this.filter,
+                    filter: FILTER_OPTIONS[this.activeFilter],
                     _limit: this.maxItems
                 }
             },
@@ -128,6 +108,9 @@ const TYPES = ['in', 'out', 'self']
                             })
                         }
                         if (this.initialLoad) {
+                            if (this.activeFilter === 0 && this.getTransfers.transfers.length > 0) {
+                                this.hasFilter = true
+                            }
                             this.showPagination = this.getTransfers.nextKey != null
                             this.initialLoad = false
                         }
@@ -171,17 +154,20 @@ export default class AddressTransers extends Mixins(CoinData) {
 
     syncing?: boolean = false
     initialLoad = true
-    showPagination = false
-    filter = null
-    index = 0
-    totalPages = 0
-    /*isEnd -  Last Index loaded */
-    isEnd = 0
     pageType = 'address'
     getTransfers!: EthTransfersType | ERC20TransfersType | ERC721TransfersType
     ethTransfers!: EthTransfer[]
     hasError = false
     loadingStateDiff = false
+    /* Pagination : */
+    showPagination = false
+    index = 0
+    totalPages = 0
+    /*isEnd -  Last Index loaded */
+    isEnd = 0
+    /* Filter: */
+    activeFilter = 0
+    hasFilter = false
 
     /*
     ===================================================================================
@@ -204,7 +190,14 @@ export default class AddressTransers extends Mixins(CoinData) {
     get message(): string {
         if (!this.loading && this.hasTransfers && this.getTransfers.transfers.length === 0) {
             if (this.isETH) {
-                return `${this.$t('message.tx.no-all')}`
+                switch (this.activeFilter) {
+                    case 1:
+                        return `${this.$t('message.tx.no-in')}`
+                    case 2:
+                        return `${this.$t('message.tx.no-out')}`
+                    default:
+                        return `${this.$t('message.tx.no-all')}`
+                }
             }
             return `${this.$t('message.transfer.no-all')}`
         }
@@ -243,19 +236,19 @@ export default class AddressTransers extends Mixins(CoinData) {
         return this.transfersType === 'ERC721'
     }
 
-    get options() {
+    get options(): FilterSortItem[] {
         return [
             {
-                text: this.$i18n.t('filter.all'),
-                value: null
+                id: 0,
+                text: this.$i18n.t('filter.all')
             },
             {
-                text: this.$i18n.t('filter.in'),
-                value: 'TO'
+                id: 1,
+                text: this.$i18n.t('filter.in')
             },
             {
-                text: this.$i18n.t('filter.out'),
-                value: 'FROM'
+                id: 2,
+                text: this.$i18n.t('filter.out')
             }
         ]
     }
@@ -305,9 +298,9 @@ export default class AddressTransers extends Mixins(CoinData) {
     /**
      * Filter on change call back
      */
-    onFilterChange(filter: any) {
+    onFilterChange(filter: number): void {
         this.setPage(0, true)
-        this.filter = filter
+        this.activeFilter = filter
     }
     /**
      * Sets page or reset

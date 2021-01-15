@@ -54,6 +54,10 @@ export interface State {
     title?: string
     blockNumber?: number
 }
+export interface FilterSortItem {
+    id: number | string
+    text: TranslateResult
+}
 
 export enum EnumAdrChips {
     miner = 'miner',

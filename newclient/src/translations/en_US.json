@@ -85,7 +85,7 @@
         "decimal": "Decimals",
         "owner": "Owner",
         "market": "Market Cap",
-        "change": "%Change (24H)",
+        "change": "24h",
         "volume": "Volume",
         "links": "Links",
         "website": "Website",

@@ -34,28 +34,10 @@
         <v-divider class="lineGrey mt-1 mb-1" />
         <!--
         =====================================================================================
-        SM AND UP: Search / Pagination
-        =====================================================================================
-        -->
-        <v-layout align-center justify-center row wrap hidden-xs-only px-2 my-2>
-            <v-flex sm12 md7>
-                <fav-search :items="favAddresses" :loading="isLoading" @search="onSearch" />
-            </v-flex>
-            <v-flex sm5 py-0 hidden-md-and-up>
-                <app-filter :options="options" :show-desktop="false" :is-sort="true" @onSelectChange="sortAddresses" />
-            </v-flex>
-            <v-spacer />
-            <v-flex shrink py-0 pl-1>
-                <app-paginate v-if="totalPages > 1" :total="totalPages" :current-page="index" @newPage="setPage" />
-            </v-flex>
-        </v-layout>
-
-        <!--
-        =====================================================================================
           Mobile (xs-only): ADD button / REMOVE button
         =====================================================================================
         -->
-        <v-layout hidden-sm-and-up align-center justify-space-between pl-2 pr-2 pb-2>
+        <v-layout hidden-sm-and-up align-center justify-space-between pl-2 pr-2 py-1>
             <v-flex v-if="!deleteMode" shrink pt-0 pb-0>
                 <fav-btn-add ref="favAdd" :add-address="addItem" :has-address="hasAddress" />
             </v-flex>
@@ -79,18 +61,21 @@
         </v-layout>
         <!--
         =====================================================================================
-          Mobile (xs-only): Search / Pagination
+        Search / Pagination
         =====================================================================================
         -->
-        <v-layout grid-list-xs align-center justify-center hidden-sm-and-up row wrap pr-2 pl-2 mb-3>
-            <v-flex xs12 pb-0 pt-0>
-                <app-filter :options="options" :show-desktop="false" :is-sort="true" @onSelectChange="sortAddresses" />
-            </v-flex>
-            <v-flex xs12 pb-0 pt-0>
+        <v-layout align-center justify-center row wrap px-2 pb-2>
+            <v-flex sm12 md7>
                 <fav-search :items="favAddresses" :loading="isLoading" @search="onSearch" />
             </v-flex>
-            <v-flex shrink pt-0 pb-0>
-                <app-paginate v-if="totalPages > 1" :total="totalPages" :current-page="index" @newPage="setPage" />
+            <v-flex xs12 sm8 md2 py-2 px-2 hidden-md-and-up>
+                <app-filter :is-sort="true" :items="options" :selected="sort" @onSelectChange="sortAddresses" />
+            </v-flex>
+            <v-spacer />
+            <v-flex xs12 sm4 md3 py-1>
+                <v-layout row align-center justify-end pr-2>
+                    <app-paginate v-if="totalPages > 1" :total="totalPages" :current-page="index" @newPage="setPage" />
+                </v-layout>
             </v-flex>
         </v-layout>
         <!--
@@ -137,7 +122,7 @@
 <script lang="ts">
 import { Component, Prop, Mixins, Watch } from 'vue-property-decorator'
 import { ErrorMessagesFav } from '@app/modules/favorite-addresses/models/ErrorMessagesFav'
-import { Crumb } from '@app/core/components/props'
+import { Crumb, FilterSortItem } from '@app/core/components/props'
 import AppTableTitle from '@app/core/components/ui/AppTableTitle.vue'
 import AppPaginate from '@app/core/components/ui/AppPaginate.vue'
 import FavAddrTableHeader from '@app/modules/favorite-addresses/components/FavAddrTableHeader.vue'
@@ -207,34 +192,30 @@ export default class FavHandlerAddressListRow extends Mixins(CoinData, FavAction
     deleteArray: string[] = []
     isAllSelected = false
     addressChipsMap = new Map<string, EnumAdrChips[]>()
-    sort = ''
+    sort = FILTER_VALUES[2]
 
     /*
   ===================================================================================
     Computed
   ===================================================================================
   */
-    get options() {
+    get options(): FilterSortItem[] {
         return [
             {
-                value: FILTER_VALUES[0],
-                text: this.$i18n.tc('fav.sort.address'),
-                filter: this.$i18n.t('filter.high')
+                id: FILTER_VALUES[0],
+                text: this.$i18n.tc('fav.sort.address')
             },
             {
-                value: FILTER_VALUES[1],
-                text: this.$i18n.tc('fav.sort.address'),
-                filter: this.$i18n.t('filter.low')
+                id: FILTER_VALUES[1],
+                text: this.$i18n.tc('fav.sort.address')
             },
             {
-                value: FILTER_VALUES[2],
-                text: this.$i18n.tc('fav.sort.name'),
-                filter: this.$i18n.t('filter.high')
+                id: FILTER_VALUES[2],
+                text: this.$i18n.tc('fav.sort.name')
             },
             {
-                value: FILTER_VALUES[3],
-                text: this.$i18n.tc('fav.sort.name'),
-                filter: this.$i18n.t('filter.low')
+                id: FILTER_VALUES[3],
+                text: this.$i18n.tc('fav.sort.name')
             }
         ]
     }
@@ -253,7 +234,7 @@ export default class FavHandlerAddressListRow extends Mixins(CoinData, FavAction
     }
     get adrList(): favAddressesType[] {
         if (!this.isLoading || this.hasFavAdr) {
-            this.sort !== '' ? this.favSort.sortFavorites(this.favorites, this.sort) : ''
+            this.favSort.sortFavorites(this.favorites, this.sort)
             const start = this.searchVal ? 0 : this.index * this.maxItems
             const end = start + this.maxItems > this.favorites.length ? this.favorites.length : start + this.maxItems
             return this.favorites.slice(start, end)

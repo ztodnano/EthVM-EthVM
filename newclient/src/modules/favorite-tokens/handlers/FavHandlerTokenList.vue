@@ -15,17 +15,18 @@
           Search / Pagination / Filter
         =====================================================================================
         -->
-        <v-layout align-center justify-center row wrap px-2 my-2 class="search-paginate-filter-layout">
-            <v-flex xs12 md7 py-0 mb-1>
+        <v-layout align-center justify-center row wrap px-2 pb-2 my-2 class="search-paginate-filter-layout">
+            <v-flex xs12 md7>
                 <fav-search :items="favTokens" :loading="isLoading" @search="onSearch" />
             </v-flex>
             <v-spacer hidden-sm-and-up />
-            <v-flex xs12 sm5 py-0 hidden-md-and-up>
-                <app-filter :options="options" :show-desktop="false" :is-sort="true" @onSelectChange="sortTokens" />
+            <v-flex xs12 sm8 py-1 hidden-md-and-up>
+                <app-filter :is-sort="true" :items="options" :selected="sort" @onSelectChange="sortTokens" />
             </v-flex>
-            <v-spacer hidden-md-and-up />
-            <v-flex shrink py-0>
-                <app-paginate v-if="totalPages > 1" :total="totalPages" :current-page="index" @newPage="setPage" />
+            <v-flex xs12 sm4 md3 py-1>
+                <v-layout row align-center justify-end pr-2>
+                    <app-paginate v-if="totalPages > 1" :total="totalPages" :current-page="index" @newPage="setPage" />
+                </v-layout>
             </v-flex>
         </v-layout>
         <!--
@@ -56,7 +57,7 @@
 <script lang="ts">
 import { Component, Prop, Mixins, Watch } from 'vue-property-decorator'
 import { ErrorMessagesFav } from '@app/modules/favorite-tokens/models/ErrorMessagesFav'
-import { Crumb } from '@app/core/components/props'
+import { Crumb, FilterSortItem } from '@app/core/components/props'
 import AppTableTitle from '@app/core/components/ui/AppTableTitle.vue'
 import AppPaginate from '@app/core/components/ui/AppPaginate.vue'
 import TableTokensHeader from '@app/modules/tokens/components/TableTokensHeader.vue'
@@ -113,54 +114,46 @@ export default class FavHandlerTokensListRow extends Mixins(CoinData, FavActions
     maxItems = 10
     /* Search */
     searchVal = ''
-    sort = ''
+    sort = FILTER_VALUES[0]
 
     /*
   ===================================================================================
     Computed
   ===================================================================================
   */
-    get options() {
+    get options(): FilterSortItem[] {
         return [
             {
-                value: FILTER_VALUES[0],
-                text: this.$i18n.tc('token.name', 1),
-                filter: this.$i18n.t('filter.high')
+                id: FILTER_VALUES[0],
+                text: this.$i18n.tc('token.name', 1)
             },
             {
-                value: FILTER_VALUES[1],
-                text: this.$i18n.tc('token.name', 1),
-                filter: this.$i18n.t('filter.low')
+                id: FILTER_VALUES[1],
+                text: this.$i18n.tc('token.name', 1)
             },
             {
-                value: FILTER_VALUES[2],
-                text: this.$i18n.tc('price.name', 1),
-                filter: this.$i18n.t('filter.high')
+                id: FILTER_VALUES[2],
+                text: this.$i18n.tc('price.name', 1)
             },
             {
-                value: FILTER_VALUES[3],
-                text: this.$i18n.tc('price.name', 1),
-                filter: this.$i18n.t('filter.low')
+                id: FILTER_VALUES[3],
+                text: this.$i18n.tc('price.name', 1)
             },
             {
-                value: FILTER_VALUES[4],
-                text: this.$i18n.tc('token.volume', 1),
-                filter: this.$i18n.t('filter.high')
+                id: FILTER_VALUES[4],
+                text: this.$i18n.tc('token.volume', 1)
             },
             {
-                value: FILTER_VALUES[5],
-                text: this.$i18n.tc('token.volume', 1),
-                filter: this.$i18n.t('filter.low')
+                id: FILTER_VALUES[5],
+                text: this.$i18n.tc('token.volume', 1)
             },
             {
-                value: FILTER_VALUES[6],
-                text: this.$i18n.t('token.market'),
-                filter: this.$i18n.t('filter.high')
+                id: FILTER_VALUES[6],
+                text: this.$i18n.t('token.market')
             },
             {
-                value: FILTER_VALUES[7],
-                text: this.$i18n.t('token.market'),
-                filter: this.$i18n.t('filter.low')
+                id: FILTER_VALUES[7],
+                text: this.$i18n.t('token.market')
             }
         ]
     }
@@ -216,7 +209,7 @@ export default class FavHandlerTokensListRow extends Mixins(CoinData, FavActions
     }
     get tokenList(): TokenMarketData[] {
         if (!this.isLoading || this.hasFavTokens) {
-            this.sort !== '' ? this.favSort.sortFavorites(this.coinMarketFavorites, this.sort) : ''
+            this.favSort.sortFavorites(this.coinMarketFavorites, this.sort)
             const start = this.searchVal ? 0 : this.index * this.maxItems
             const end = start + this.maxItems > this.coinMarketFavorites.length ? this.coinMarketFavorites.length : start + this.maxItems
             return this.coinMarketFavorites.slice(start, end)

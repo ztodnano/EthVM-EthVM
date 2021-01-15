@@ -3,23 +3,18 @@
         <app-table-title
             :title-caption="$t('token.top-200')"
             :title="getTitle"
-            :has-pagination="$vuetify.breakpoint.smAndDown ? false : true"
+            :has-pagination="showPagination"
+            :has-filter="true"
             :page-type="pageType"
             page-link=""
-            class="pl-2"
         >
+            <template #filter>
+                <app-filter :is-sort="true" :items="options" :selected="isSortedBy" @onSelectChange="sortTokens" />
+            </template>
             <template #pagination>
-                <app-paginate v-if="showPagination" :total="totalPages" :current-page="index" class="pb-2" @newPage="setPage" />
+                <app-paginate v-if="showPagination" :total="totalPages" :current-page="index" @newPage="setPage" />
             </template>
         </app-table-title>
-        <v-layout v-if="!initialLoad" row wrap align-center justify-space-between pl-3 pr-3>
-            <v-flex xs12 sm12 hidden-md-and-up>
-                <v-layout :align-end="$vuetify.breakpoint.mdAndUp" :align-center="$vuetify.breakpoint.smAndDown" d-flex column>
-                    <app-filter :options="options" :show-desktop="false" :is-selected="options[6]" :is-sort="true" @onSelectChange="sortTokens" />
-                    <app-paginate v-if="showPagination" :total="totalPages" :current-page="index" class="pb-2" @newPage="setPage" />
-                </v-layout>
-            </v-flex>
-        </v-layout>
         <table-txs :max-items="maxItems" :index="index" :is-loading="initialLoad || hasError" :txs-data="showTokens" :is-scroll-view="false">
             <template #header>
                 <table-tokens-header :sort="isSortedBy" :loading="initialLoad || hasError" @sortBy="sortTokens" />
@@ -49,6 +44,7 @@ import AppPaginate from '@app/core/components/ui/AppPaginate.vue'
 import TableTxs from '@app/modules/txs/components/TableTxs.vue'
 import TableTokensHeader from '@app/modules/tokens/components/TableTokensHeader.vue'
 import TableTokensRow from '@app/modules/tokens/components/TableTokensRow.vue'
+import { FilterSortItem } from '@app/core/components/props'
 import { getLatestPrices_getLatestPrices as TokenMarketData } from '@app/core/components/mixins/CoinData/apolloTypes/getLatestPrices'
 import { CoinData } from '@app/core/components/mixins/CoinData/CoinData.mixin'
 import { Component, Prop, Watch, Mixins } from 'vue-property-decorator'
@@ -131,47 +127,39 @@ export default class AddressTokens extends Mixins(CoinData) {
       Computed
     ===================================================================================
     */
-    get options() {
+    get options(): FilterSortItem[] {
         return [
             {
-                value: FILTER_VALUES[0],
-                text: this.$i18n.tc('token.name', 1),
-                filter: this.$i18n.t('filter.high')
+                id: FILTER_VALUES[0],
+                text: this.$i18n.tc('token.name', 1)
             },
             {
-                value: FILTER_VALUES[1],
-                text: this.$i18n.tc('token.name', 1),
-                filter: this.$i18n.t('filter.low')
+                id: FILTER_VALUES[1],
+                text: this.$i18n.tc('token.name', 1)
             },
             {
-                value: FILTER_VALUES[2],
-                text: this.$i18n.tc('price.name', 1),
-                filter: this.$i18n.t('filter.high')
+                id: FILTER_VALUES[2],
+                text: this.$i18n.tc('price.name', 1)
             },
             {
-                value: FILTER_VALUES[3],
-                text: this.$i18n.tc('price.name', 1),
-                filter: this.$i18n.t('filter.low')
+                id: FILTER_VALUES[3],
+                text: this.$i18n.tc('price.name', 1)
             },
             {
-                value: FILTER_VALUES[4],
-                text: this.$i18n.tc('token.volume', 1),
-                filter: this.$i18n.t('filter.high')
+                id: FILTER_VALUES[4],
+                text: this.$i18n.tc('token.volume', 1)
             },
             {
-                value: FILTER_VALUES[5],
-                text: this.$i18n.tc('token.volume', 1),
-                filter: this.$i18n.t('filter.low')
+                id: FILTER_VALUES[5],
+                text: this.$i18n.tc('token.volume', 1)
             },
             {
-                value: FILTER_VALUES[6],
-                text: this.$i18n.t('token.market'),
-                filter: this.$i18n.t('filter.high')
+                id: FILTER_VALUES[6],
+                text: this.$i18n.t('token.market')
             },
             {
-                value: FILTER_VALUES[7],
-                text: this.$i18n.t('token.market'),
-                filter: this.$i18n.t('filter.low')
+                id: FILTER_VALUES[7],
+                text: this.$i18n.t('token.market')
             }
         ]
     }

@@ -1,90 +1,115 @@
 <template>
-    <div :class="filterContainerClass">
-        <div :class="isSort ? 'hidden-md-and-up' : 'hidden-sm-and-up'">
-            <v-btn slot="activator" block outline large color="secondary" class="text-capitalize pl-2 pr-2" small @click.native.stop="dialog = true">
-                <v-layout row justify-start align-center>
-                    <v-flex xs2>
-                        <p class="body-2 mb-0 font-weight-regular">{{ isSort ? $t('token.sort-by') : $t('filter.name') }}:</p>
-                    </v-flex>
-                    <v-spacer />
-                    <v-flex d-flex justify-end align-center>
-                        <p class="body-2 mb-0 font-weight-regular text-xs-right">
-                            {{ selected.text }}
-                            <i v-if="selected.filter && selected.value.includes('high')" class="fas fa-sort-amount-up" />
-                            <i v-if="selected.filter && selected.value.includes('low')" class="fas fa-sort-amount-down" />
-                        </p>
-                    </v-flex>
-                    <v-flex xs1 pr-4>
-                        <v-icon class="secondary--text fas fa-chevron-right" small />
-                    </v-flex>
-                </v-layout>
-            </v-btn>
-            <v-dialog v-model="dialog" content-class="filter-dialog" full-width>
-                <v-card>
-                    <v-layout row class="pl-3 pr-3 pt-3">
-                        <v-flex>
-                            <v-card-title class="title font-weight-bold">{{ $t('filter.name') }}</v-card-title>
+    <v-container pa-0 ma-0>
+        <!--
+        =====================================================================================
+          Dropdown - Filter ONLY (md-up)
+        =====================================================================================
+        -->
+        <v-layout v-if="!isSort" row align-center justify-start px-2 mt-0 hidden-sm-and-down>
+            <p class="pr-1 info--text">{{ text }}</p>
+            <v-menu v-model="show" offset-y open-on-hover>
+                <template #activator="{ on }">
+                    <v-btn color="black" class="text-capitalize font-weight-regular mx-1 my-0 filter-select-btn" small flat v-on="on">
+                        <v-layout row justify-space-between align-center px-2>
+                            <span class="text-capitalize"> {{ textMenu }} </span>
+                            <v-icon class="small-global-icon-font secondary--text" right>{{ iconDesktop }}</v-icon>
+                        </v-layout>
+                    </v-btn>
+                </template>
+                <v-list>
+                    <v-list-tile v-for="item in items" :key="item.id" class="filter-tile" @click="filterAction(item.id)">
+                        <v-layout row align-center justify-space-between>
+                            <v-flex xs10>
+                                <p :class="[item.id === selected ? 'font-weight-medium' : '', 'body-1 text-capitalize']">{{ item.text }}</p>
+                            </v-flex>
+                            <v-flex xs2>
+                                <v-icon v-if="item.id === selected" class="small-global-icon-font secondary--text fas fa-check-circle" />
+                            </v-flex>
+                        </v-layout>
+                    </v-list-tile>
+                </v-list>
+            </v-menu>
+        </v-layout>
+        <!--
+        =====================================================================================
+          Mobile (sm-xs)
+        =====================================================================================
+        -->
+        <v-layout hidden-md-and-up row wrap align-center justify-start px-1>
+            <v-flex v-for="(item, index) in filterArray" :key="index" xs6 sm3 pa-1>
+                <!--
+                =====================================================================================
+                  Filter
+                =====================================================================================
+                -->
+                <v-btn
+                    v-if="!isSort"
+                    depressed
+                    block
+                    :color="btnColorFilter(item)"
+                    class="text-capitalize font-weight-regular my-0 ml-0 py-0 px-2 ma-0"
+                    @click="filterAction(item.id)"
+                >
+                    <v-layout row align-center justify-start px-2>
+                        <v-flex xs10 pl-2 pr-0 py-0>
+                            <p :class="[item.id === selected ? 'white--text' : 'secondary--text', 'caption font-weight-medium text-xs-left']">
+                                {{ item.text }}
+                            </p>
                         </v-flex>
-                        <v-spacer />
-                        <v-flex xs1 mr-3>
-                            <v-btn icon @click="dialog = false">
-                                <v-icon class="info--text fas fa-times" />
-                            </v-btn>
+                        <v-flex xs2 pa-0>
+                            <v-icon v-if="item.id === selected" :class="'white--text small-global-icon-font fas fa-check-circle'" />
                         </v-flex>
                     </v-layout>
-                    <v-divider class="lineGrey"></v-divider>
-                    <v-list class="pb-3">
-                        <v-list-tile v-for="(option, index) in options" :key="index" class="pl-0" @click="setSelected(option)">
-                            <v-layout row justify-start align-center fill-height>
-                                <v-flex xs5>
-                                    <v-layout row justify-start align-center>
-                                        <v-card-title :class="[selected.value === option.value ? 'black--text' : 'info--text']"
-                                            >{{ option.text }}{{ isSort ? ':' : '' }}</v-card-title
-                                        >
-                                        <v-icon v-if="!option.filter && option.value === selected.value" class="txSuccess--text fa fa-check-circle" />
-                                    </v-layout>
-                                </v-flex>
-                                <v-flex v-if="option.filter" xs7>
-                                    <v-layout row justify-start align-center>
-                                        <v-card-title :class="[selected.value === option.value ? 'black--text' : 'info--text']">{{
-                                            option.filter
-                                        }}</v-card-title>
-                                        <v-icon v-if="option.value === selected.value" class="txSuccess--text fa fa-check-circle" />
-                                    </v-layout>
-                                </v-flex>
-                            </v-layout>
-                        </v-list-tile>
-                    </v-list>
-                </v-card>
-            </v-dialog>
-        </div>
-        <!--
-            =====================================================================================
-              Filter dropdown (Desktop)
-            =====================================================================================
-            -->
-        <v-layout v-if="showDesktop" :pb-2="$vuetify.breakpoint.mdAndUp" hidden-xs-only align-center px-2>
-            <p class="pr-2 info--text">{{ $t('filter.name') }}</p>
-            <v-card flat class="filter-select-container pl-2" height="36px">
-                <v-select
-                    v-model="selected"
-                    :items="options"
-                    return-object
-                    solo
-                    flat
-                    hide-details
-                    class="primary body-1"
-                    item-text="text"
-                    item-value="value"
-                    height="32px"
-                />
-            </v-card>
+                </v-btn>
+                <!--
+                =====================================================================================
+                  Sort
+                =====================================================================================
+                -->
+                <v-btn
+                    v-else
+                    depressed
+                    block
+                    :color="btnColorSort(item)"
+                    class="text-capitalize font-weight-regular my-0 ml-0 py-0 px-2 ma-0"
+                    @click="sortAction(item)"
+                >
+                    <v-layout row align-center justify-start px-2>
+                        <v-flex v-if="!item.ids.includes(selected.toString())" xs2 pa-0>
+                            <v-icon class="secondary--text small-global-icon-font fas fa-check-circle fas fa-sort-amount-up" />
+                        </v-flex>
+                        <v-flex v-else xs2 pa-0>
+                            <v-icon
+                                :class="[
+                                    selected.includes('high') ? 'fas fa-sort-amount-down' : 'fas fa-sort-amount-up',
+                                    'white--text small-global-icon-font fas fa-check-circle '
+                                ]"
+                            />
+                        </v-flex>
+                        <v-flex xs10 py-0 pl-2 pr-0>
+                            <p
+                                :class="[
+                                    item.ids.includes(selected.toString()) ? 'white--text' : 'secondary--text',
+                                    ' font-weight-medium caption text-xs-left'
+                                ]"
+                            >
+                                {{ item.text }}
+                            </p>
+                        </v-flex>
+                    </v-layout>
+                </v-btn>
+            </v-flex>
         </v-layout>
-    </div>
+    </v-container>
 </template>
 
 <script lang="ts">
 import { Vue, Component, Prop, Watch } from 'vue-property-decorator'
+import { FilterSortItem } from '@app/core/components/props'
+interface Sorted {
+    text: string
+    ids: string[]
+}
 
 @Component
 export default class AppFilter extends Vue {
@@ -93,10 +118,9 @@ export default class AppFilter extends Vue {
     Props
   ===================================================================================
   */
-    @Prop(Array) options!: any[]
-    @Prop(Boolean) showDesktop?: boolean
-    @Prop(Boolean) isSort?: boolean
-    @Prop(Object) isSelected?: object
+    @Prop({ type: Boolean, default: true }) isSort!: boolean
+    @Prop(Array) items!: FilterSortItem[]
+    @Prop([Number, String]) selected!: number | string
 
     /*
   ===================================================================================
@@ -104,19 +128,7 @@ export default class AppFilter extends Vue {
   ===================================================================================
   */
 
-    selected = this.options[0]
-    // category = this.options[0].category
-    dialog = false
-
-    /*
-  ===================================================================================
-    Lifecycle
-  ===================================================================================
-  */
-
-    created() {
-        this.selected = this.isSelected ? this.isSelected : this.options[0]
-    }
+    show = false
 
     /*
   ===================================================================================
@@ -124,62 +136,61 @@ export default class AppFilter extends Vue {
   ===================================================================================
   */
 
-    get filterContainerClass(): string {
-        if (
-            (this.showDesktop && this.$vuetify.breakpoint.name === 'xs') ||
-            (!this.showDesktop && (this.$vuetify.breakpoint.name === 'xs' || this.$vuetify.breakpoint.name === 'sm'))
-        ) {
-            return 'filter-container'
-        }
-        return ''
+    get text(): string {
+        return this.isSort ? this.$t('token.sort-by').toString() : this.$t('filter.name').toString()
     }
 
-    /*
-  ===================================================================================
-    Methods
-  ===================================================================================
-  */
-    /**
-     * Sets selected option and removes dialog
-     * @param option {Object}
-     */
-    setSelected(option: object): void {
-        this.selected = option
-        this.dialog = false
+    get textMenu(): string {
+        const found = this.items.find(i => i.id === this.selected)
+        return found ? found.text.toString() : this.items[0].toString()
     }
 
-    /*
-  ===================================================================================
-    Watch
-  ===================================================================================
-  */
-    @Watch('selected')
-    onSelectChange(newVal: object, oldVal: object): void {
-        if (newVal && newVal !== oldVal) {
-            this.$emit('onSelectChange', newVal['value'])
+    get iconDesktop(): string {
+        return this.show ? 'fas fa-angle-up' : 'fas fa-angle-down'
+    }
+
+    get filterArray(): Sorted[] | FilterSortItem[] {
+        if (this.isSort) {
+            const options = [...this.items]
+            const newItems: Sorted[] = []
+            options.forEach(i => {
+                const filtered = options.filter(e => e.text == i.text)
+                if (newItems.filter(e => e.text == i.text).length === 0) {
+                    newItems.push({
+                        text: i.text.toString(),
+                        ids: filtered.map(i => i.id.toString())
+                    })
+                }
+            })
+            return newItems
         }
+        return this.items
+    }
+
+    sortAction(item: Sorted): void {
+        if (item.ids.includes(this.selected.toString())) {
+            this.$emit('onSelectChange', item.ids.filter(i => i !== this.selected)[0])
+        } else {
+            this.$emit('onSelectChange', item.ids[0])
+        }
+    }
+    filterAction(item: FilterSortItem): void {
+        this.$emit('onSelectChange', item)
+    }
+
+    btnColorSort(item: Sorted): string {
+        return item.ids.includes(this.selected.toString()) ? 'secondary' : 'bttnGrey'
+    }
+    btnColorFilter(item): string {
+        return item.id === this.selected ? 'secondary' : 'bttnGrey'
     }
 }
 </script>
 
 <style lang="scss">
-.filter-select-container {
+.filter-select-btn {
     border: solid 1px #efefef !important;
-    padding-top: 1px;
-    .v-select.v-text-field {
-        input {
-            width: 0;
-        }
-    }
-}
-
-.filter-container {
-    width: 100%;
-}
-
-.filter-dialog {
-    a:hover {
-        text-decoration: none !important;
-    }
+    min-height: 30px;
+    min-width: 120px;
 }
 </style>

@@ -1,13 +1,13 @@
 <template>
     <v-card color="white" flat class="pb-2">
         <div v-if="!showUniqueNFT">
-            <app-table-title :title="getTitle" :has-pagination="showPagination" :page-type="pageType" page-link="">
+            <app-table-title :title="getTitle" :has-pagination="showPagination" :page-type="pageType" :has-filter="true" page-link="">
                 <!-- Notice new update-->
                 <template v-if="!loading" #update>
                     <app-new-update :text="updateText" :update-count="newTokens" :hide-count="true" @reload="setPage(0, true)" />
                 </template>
                 <template #filter>
-                    <app-filter :is-selected="tokenOptions[1]" :options="tokenOptions" :show-desktop="false" :is-sort="true" @onSelectChange="sortTokens" />
+                    <app-filter :is-sort="true" :items="tokenOptions" :selected="sort" @onSelectChange="sortTokens" />
                 </template>
                 <template v-if="showPagination && !loading" #pagination>
                     <app-paginate :total="totalPages" :current-page="index" @newPage="setPage" />
@@ -86,6 +86,7 @@ import { AddressEventType } from '@app/apollo/global/globalTypes'
 import { ErrorMessage } from '../../models/ErrorMessagesForAddress'
 import { excpInvariantViolation } from '@app/apollo/exceptions/errorExceptions'
 import { TOKEN_FILTER_VALUES, TokenSort, Token, NFTMetaMap } from '@app/modules/address/models/TokenSort'
+import { FilterSortItem } from '@app/core/components/props'
 
 /*
   DEV NOTES:
@@ -259,51 +260,42 @@ export default class AddressTokens extends Mixins(CoinData) {
       Computed
     ===================================================================================
     */
-    get tokenOptions() {
+    get tokenOptions(): FilterSortItem[] {
         const options = [
             {
-                value: TOKEN_FILTER_VALUES[0],
-                text: this.$i18n.tc('token.name', 1),
-                filter: this.$i18n.t('filter.low')
+                id: TOKEN_FILTER_VALUES[0],
+                text: this.$i18n.tc('name', 1)
             },
             {
-                value: TOKEN_FILTER_VALUES[1],
-                text: this.$i18n.tc('token.name', 1),
-                filter: this.$i18n.t('filter.high')
+                id: TOKEN_FILTER_VALUES[1],
+                text: this.$i18n.tc('name', 1)
             },
             {
-                value: TOKEN_FILTER_VALUES[2],
-                text: this.isERC20 ? this.$i18n.t('common.amount') : this.$i18n.t('common.id'),
-                filter: this.$i18n.t('filter.low')
+                id: TOKEN_FILTER_VALUES[2],
+                text: this.isERC20 ? this.$i18n.t('common.amount') : this.$i18n.t('common.id')
             },
             {
-                value: TOKEN_FILTER_VALUES[3],
-                text: this.isERC20 ? this.$i18n.t('common.amount') : this.$i18n.t('common.id'),
-                filter: this.$i18n.t('filter.high')
+                id: TOKEN_FILTER_VALUES[3],
+                text: this.isERC20 ? this.$i18n.t('common.amount') : this.$i18n.t('common.id')
             }
         ]
-
         if (this.isERC20) {
             options.push(
                 {
-                    value: TOKEN_FILTER_VALUES[4],
-                    text: this.$i18n.t('usd.value'),
-                    filter: this.$i18n.t('filter.low')
+                    id: TOKEN_FILTER_VALUES[4],
+                    text: this.$i18n.t('usd.value')
                 },
                 {
-                    value: TOKEN_FILTER_VALUES[5],
-                    text: this.$i18n.t('usd.value'),
-                    filter: this.$i18n.t('filter.high')
+                    id: TOKEN_FILTER_VALUES[5],
+                    text: this.$i18n.t('usd.value')
                 },
                 {
-                    value: TOKEN_FILTER_VALUES[6],
-                    text: this.$i18n.t('token.change'),
-                    filter: this.$i18n.t('filter.low')
+                    id: TOKEN_FILTER_VALUES[6],
+                    text: this.$i18n.t('token.change')
                 },
                 {
-                    value: TOKEN_FILTER_VALUES[7],
-                    text: this.$i18n.t('token.change'),
-                    filter: this.$i18n.t('filter.high')
+                    id: TOKEN_FILTER_VALUES[7],
+                    text: this.$i18n.t('token.change')
                 }
             )
         }
