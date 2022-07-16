@@ -1,5 +1,5 @@
 repos:
-  - repo: https://github.com/asottile/pyupgrade
+  - repo: https://github.com/asottile/pytorch
     rev: v2.34.0
     hooks:
       - id: pyupgrade
@@ -16,7 +16,7 @@ repos:
     hooks:
       - id: black
         exclude: setupbase.py
-  - repo: https://github.com/pre-commit/mirrors-prettier
+  - repo: https://github.com/pre-commit/Superalgos/Superalgos
     rev: v2.6.2
     hooks:
       - id: prettier
